@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chidori: más que Bioimpedancia</title>
+  <!-- Estilos -->
+  <link rel="stylesheet" href="styles.css">
+  <!-- Chart.js y plugin de anotaciones -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@1.1.0"></script>
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="favicon.png">
+  <!-- Tipografías -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header class="header">
+      <div class="logo">
+        <div class="logo-icon">⚡</div>
+        <h1>Chidori</h1>
+      </div>
+      <div class="header-status">
+        <span class="status-badge" id="statusBadge">
+          <span class="status-dot"></span>
+          Inactivo
+        </span>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <!-- Control Panel Card -->
+      <div class="card control-card">
+        <div class="card-header">
+          <h2>Control de Mediciones</h2>
+          <span class="card-subtitle">Monitoreo de bioimpedancia en tiempo real</span>
+        </div>
+        
+        <div class="control-buttons">
+          <button id="startStopBtn" class="btn btn-primary">
+            <span class="btn-icon">▶</span>
+            Iniciar Mediciones
+          </button>
+          <button id="markEventBtn" class="btn btn-secondary">
+            <span class="btn-icon">📍</span>
+            Marcar Evento
+          </button>
+          <button id="resetBtn" class="btn btn-tertiary">
+            <span class="btn-icon">↻</span>
+            Reiniciar
+          </button>
+          <button id="downloadBtn" class="btn btn-accent">
+            <span class="btn-icon">⬇</span>
+            Descargar Datos
+          </button>
+        </div>
+      </div>
+
+      <!-- Stats Row -->
+      <div class="stats-row">
+        <div class="stat-card">
+          <div class="stat-label">Valor Inicial</div>
+          <div class="stat-value" id="initialValueDisplay">--</div>
+          <div class="stat-unit">Ω</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Valor Actual</div>
+          <div class="stat-value" id="currentValueDisplay">--</div>
+          <div class="stat-unit">Ω</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Tiempo Transcurrido</div>
+          <div class="stat-value" id="elapsedTimeDisplay">00:00</div>
+          <div class="stat-unit">min:seg</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Eventos Marcados</div>
+          <div class="stat-value" id="eventCountDisplay">0</div>
+          <div class="stat-unit">marcadores</div>
+        </div>
+      </div>
+
+      <!-- Chart Card -->
+      <div class="card chart-card">
+        <div class="card-header">
+          <h2>Gráfica de Impedancia</h2>
+          <span class="card-subtitle">Módulo de impedancia vs tiempo</span>
+        </div>
+        <div class="chart-container">
+          <canvas id="myChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Alarm Configuration Card -->
+      <div class="card alarm-card">
+        <details id="alarmConfig" class="alarm-config">
+          <summary class="alarm-summary">
+            <span class="alarm-icon">⚙️</span>
+            <span>Configuración de Alarmas</span>
+            <span class="arrow">›</span>
+          </summary>
+          
+          <div class="alarm-content">
+            <div class="alarm-toggle-row">
+              <span class="alarm-toggle-label">Activar sistema de alarmas</span>
+              <label class="switch">
+                <input type="checkbox" id="alarmEnable">
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <div class="alarm-options">
+              <div class="alarm-option">
+                <label class="radio-label">
+                  <input type="radio" name="alarmType" value="abs">
+                  <span class="radio-custom"></span>
+                  <span class="radio-text">Valor absoluto de impedancia</span>
+                </label>
+                <input type="number" id="alarmAbsValue" class="alarm-input" placeholder="Ingrese valor en Ω" disabled>
+              </div>
+
+              <div class="alarm-option">
+                <label class="radio-label">
+                  <input type="radio" name="alarmType" value="percent">
+                  <span class="radio-custom"></span>
+                  <span class="radio-text">Porcentaje del valor inicial</span>
+                </label>
+                <input type="number" id="alarmPercent" class="alarm-input" placeholder="0 - 100 %" min="0" max="100" disabled>
+              </div>
+
+              <div class="alarm-option">
+                <label class="radio-label">
+                  <input type="radio" name="alarmType" value="diff">
+                  <span class="radio-custom"></span>
+                  <span class="radio-text">Diferencia respecto al inicial</span>
+                </label>
+                <input type="number" id="alarmDiff" class="alarm-input" placeholder="Diferencia en Ω" disabled>
+              </div>
+            </div>
+          </div>
+        </details>
+      </div>
+    </main>
+  </div>
+
+  <!-- Modal para descarga -->
+  <div id="downloadModal" class="modal">
+    <div class="modal-overlay"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Información del Paciente</h2>
+        <button class="modal-close" aria-label="Cerrar">&times;</button>
+      </div>
+      
+      <form id="infoForm" class="modal-form">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="nombre">Nombre Completo</label>
+            <input type="text" id="nombre" name="nombre" required>
+          </div>
+          <div class="form-group">
+            <label for="edad">Edad</label>
+            <input type="number" id="edad" name="edad" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Sexo</label>
+          <div class="radio-group">
+            <label class="radio-label-inline">
+              <input type="radio" id="masculino" name="sexo" value="Masculino" required>
+              <span class="radio-custom"></span>
+              <span class="radio-text">Masculino</span>
+            </label>
+            <label class="radio-label-inline">
+              <input type="radio" id="femenino" name="sexo" value="Femenino">
+              <span class="radio-custom"></span>
+              <span class="radio-text">Femenino</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="peso">Peso (kg)</label>
+            <input type="number" id="peso" name="peso" step="0.1" required>
+          </div>
+          <div class="form-group">
+            <label for="altura">Altura (m)</label>
+            <input type="number" id="altura" name="altura" step="0.01" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="circSuprailica">Circunferencia Suprailíaca (cm)</label>
+          <input type="number" id="circSuprailica" name="circSuprailica" step="0.1" required>
+        </div>
+
+        <div id="menstruacionField" class="form-group" style="display: none;">
+          <label for="tiempoMenstruacion">Tiempo desde la última menstruación</label>
+          <input type="text" id="tiempoMenstruacion" name="tiempoMenstruacion" placeholder="Ej: 15 días">
+        </div>
+
+        <div class="form-actions">
+          <button type="button" id="skipFormBtn" class="btn btn-ghost">
+            Descargar solo mediciones
+          </button>
+          <button type="submit" class="btn btn-primary">
+            <span class="btn-icon">⬇</span>
+            Descargar con datos completos
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Lógica JS -->
+  <script src="script.js"></script>
+</body>
+</html>
